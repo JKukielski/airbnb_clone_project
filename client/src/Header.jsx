@@ -16,7 +16,7 @@ export default function Header() {
         <PaperAirplaneIcon className="w-8 h-8 -rotate-90" />
         <span className="font-bold text-xl">airbnb</span>
       </Link>
-      <div className="flex gap-2 border border-gray-300 rounded-full py-2 px-4 shadow-md shadow-gray-300">
+      <div className="flex gap-2 border border-gray-300 rounded-full py-2 px-4 shadow-md shadow-gray-300 font-semibold">
         <div>Anywhere</div>
         <div className="border-l border-gray-300"></div>
         <div>Any week</div>
@@ -34,7 +34,7 @@ export default function Header() {
         <div className="bg-gray-500 text-white rounded-full border border-gray-500 overflow-hidden">
           <UserIcon className="w-6 h-6 relative top-1" />
         </div>
-        {!!user && <div>{user.name}</div>}
+        {!!user && <div className="font-semibold">{user.name}</div>}
       </Link>
     </header>
   );
