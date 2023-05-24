@@ -2,11 +2,19 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import User from './models/User.js';
+import Place from './models/Place.js';
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
+import imageDownloader from 'image-downloader';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import multer from 'multer';
+import fs from 'fs';
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -18,12 +26,11 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+app.use('/uploads', express.static(__dirname + '/uploads'));
 
 mongoose.connect(process.env.MONGO_URL);
 
-app.get('/test', (req, res) => {
-  res.json('positive');
-});
+const photoMiddleware = multer({ dest: 'uploads' });
 
 app.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
@@ -81,6 +88,64 @@ app.get('/profile', (req, res) => {
 
 app.post('/logout', (req, res) => {
   res.cookie('token', '').json('user logged out');
+});
+
+app.post('/upload-by-link', async (req, res) => {
+  const { link } = req.body;
+  const newName = 'photo' + Date.now() + '.jpg';
+  await imageDownloader.image({
+    url: link,
+    dest: __dirname + '/uploads/' + newName,
+  });
+  res.json(newName);
+});
+
+app.post('/upload', photoMiddleware.array('photos', 100), (req, res) => {
+  const uploadedFiles = [];
+  for (let i = 0; i < req.files.length; i++) {
+    const { path, originalname } = req.files[i];
+    const parts = originalname.split('.');
+    const ext = parts[parts.length - 1];
+    const newPath = path + '.' + ext;
+    fs.renameSync(path, newPath);
+    uploadedFiles.push(newPath.replace('uploads\\', ''));
+  }
+  res.json(uploadedFiles);
+});
+
+app.post('/places', async (req, res) => {
+  const { token } = req.cookies;
+  const {
+    title,
+    address,
+    addedPhotos,
+    description,
+    perks,
+    extraInfo,
+    checkIn,
+    checkOut,
+    maxGuests,
+  } = req.body;
+
+  jwt.verify(token, process.env.JWT_SECRET, {}, async (err, userData) => {
+    if (err) throw err;
+
+    const place = new Place({
+      owner: userData.id,
+      title,
+      address,
+      addedPhotos,
+      description,
+      perks,
+      extraInfo,
+      checkIn,
+      checkOut,
+      maxGuests,
+    });
+
+    const newPlace = await place.save();
+    res.json(newPlace);
+  });
 });
 
 app.listen(4000, () => {
