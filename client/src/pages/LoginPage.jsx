@@ -16,7 +16,7 @@ export default function LoginPage() {
       const { data } = await axios.post('/login', { email, password });
       setUser(data);
       alert('Login successful');
-      navigate('/');
+      navigate('/account');
     } catch (error) {
       alert('Login failed. Please try again later');
     }

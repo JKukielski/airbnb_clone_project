@@ -14,11 +14,11 @@ export default function Account() {
   if (subpage === undefined) {
     subpage = 'profile';
   }
-  if (!ready) {
-    return 'Loading...';
-  }
+  // if (!ready) {
+  //   return 'Loading...';
+  // }
 
-  if (ready && !user) {
+  if (!user) {
     navigate('/login');
   }
 

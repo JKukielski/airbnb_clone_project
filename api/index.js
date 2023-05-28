@@ -30,7 +30,16 @@ app.use('/uploads', express.static(__dirname + '/uploads'));
 
 mongoose.connect(process.env.MONGO_URL);
 
-const photoMiddleware = multer({ dest: 'uploads' });
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, __dirname + '/uploads');
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+
+const upload = multer({ storage });
 
 app.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
@@ -100,17 +109,22 @@ app.post('/upload-by-link', async (req, res) => {
   res.json(newName);
 });
 
-app.post('/upload', photoMiddleware.array('photos', 100), (req, res) => {
-  const uploadedFiles = [];
-  for (let i = 0; i < req.files.length; i++) {
-    const { path, originalname } = req.files[i];
-    const parts = originalname.split('.');
-    const ext = parts[parts.length - 1];
-    const newPath = path + '.' + ext;
-    fs.renameSync(path, newPath);
-    uploadedFiles.push(newPath.replace('uploads\\', ''));
-  }
-  res.json(uploadedFiles);
+// app.post('/upload', photoMiddleware.array('photos', 100), (req, res) => {
+//   const uploadedFiles = [];
+//   for (let i = 0; i < req.files.length; i++) {
+//     const { path, originalname } = req.files[i];
+//     const parts = originalname.split('.');
+//     const ext = parts[parts.length - 1];
+//     const newPath = path + '.' + ext;
+//     fs.renameSync(path, newPath);
+//     uploadedFiles.push(newPath.replace('uploads\\', ''));
+//   }
+//   res.json(uploadedFiles);
+// });
+
+app.post('/upload', upload.array('photos[]', 12), async (req, res) => {
+  const filenames = req.files.map((file) => file.filename);
+  res.json(filenames);
 });
 
 app.post('/places', async (req, res) => {
@@ -118,7 +132,7 @@ app.post('/places', async (req, res) => {
   const {
     title,
     address,
-    addedPhotos,
+    photos,
     description,
     perks,
     extraInfo,
@@ -134,7 +148,7 @@ app.post('/places', async (req, res) => {
       owner: userData.id,
       title,
       address,
-      addedPhotos,
+      photos,
       description,
       perks,
       extraInfo,
@@ -145,6 +159,56 @@ app.post('/places', async (req, res) => {
 
     const newPlace = await place.save();
     res.json(newPlace);
+  });
+});
+
+app.get('/places', (req, res) => {
+  const { token } = req.cookies;
+  jwt.verify(token, process.env.JWT_SECRET, {}, async (err, userData) => {
+    if (err) throw err;
+    const { id } = userData;
+    res.json(await Place.find({ owner: id }));
+  });
+});
+
+app.get('/places/:id', async (req, res) => {
+  const { id } = req.params;
+  res.json(await Place.findById(id));
+});
+
+app.put('/places/:id', async (req, res) => {
+  const { token } = req.cookies;
+  const {
+    id,
+    title,
+    address,
+    photos,
+    description,
+    perks,
+    extraInfo,
+    checkIn,
+    checkOut,
+    maxGuests,
+  } = req.body;
+
+  jwt.verify(token, process.env.JWT_SECRET, {}, async (err, userData) => {
+    if (err) throw err;
+    const newPlace = await Place.findById(id);
+    if (userData.id === newPlace.owner.toString()) {
+      newPlace.set({
+        title,
+        address,
+        photos,
+        description,
+        perks,
+        extraInfo,
+        checkIn,
+        checkOut,
+        maxGuests,
+      });
+      const savedPlace = await newPlace.save();
+      res.status(200).json(savedPlace);
+    }
   });
 });
 

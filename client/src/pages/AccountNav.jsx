@@ -2,11 +2,15 @@ import { HomeIcon, ListBulletIcon, UserIcon } from '@heroicons/react/24/solid';
 import { Link, useLocation } from 'react-router-dom';
 
 export default function AccountNav() {
-  const location = useLocation();
+  const { pathname } = useLocation();
+  let subpage = pathname.split('/')?.[2];
 
+  if (subpage === undefined) {
+    subpage = 'profile';
+  }
   const linkClasses = (type = null) => {
     let classes = 'inline-flex gap-1 py-2 px-6 rounded-full';
-    if (type === false) {
+    if (type === subpage) {
       classes += ' bg-primary text-white rounded-full';
     } else {
       classes += ' bg-gray-200';

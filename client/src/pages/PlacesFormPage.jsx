@@ -1,10 +1,12 @@
 import axios from 'axios';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import PhotosUpload from '../PhotosUpload';
 import Perks from '../Perks';
+import AccountNav from './AccountNav';
 
 export default function PlacesFormPage() {
+  const { id } = useParams();
   const [title, setTitle] = useState('');
   const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
@@ -16,8 +18,37 @@ export default function PlacesFormPage() {
   const [maxGuests, setMaxGuests] = useState(1);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  useEffect(() => {
+    if (!id) {
+      return;
+    }
+    axios.get('/places/' + id).then((response) => {
+      const { data } = response;
+      setTitle(data.title);
+      setAddress(data.address);
+      setAddedPhotos(data.photos);
+      setDescription(data.description);
+      setPerks(data.perks);
+      setExtraInfo(data.extraInfo);
+      setCheckIn(data.checkIn);
+      setCheckOut(data.checkOut);
+      setMaxGuests(data.maxGuests);
+    });
+  }, [id]);
+
+  const savePlace = async (e) => {
     e.preventDefault();
+    const placeData = {
+      title,
+      address,
+      photos: addedPhotos,
+      description,
+      perks,
+      extraInfo,
+      checkIn,
+      checkOut,
+      maxGuests,
+    };
     if (
       title.trim() === '' ||
       address.trim() === '' ||
@@ -26,23 +57,22 @@ export default function PlacesFormPage() {
       alert('Please fill in all the required fields.');
       return;
     }
-
-    await axios.post('/places', {
-      title,
-      address,
-      description,
-      perks,
-      extraInfo,
-      checkIn,
-      checkOut,
-      maxGuests,
-    });
-    navigate('/account/places');
+    if (id) {
+      await axios.put('/places' + id, {
+        id,
+        ...placeData,
+      });
+      navigate('/account/places');
+    } else {
+      await axios.post('/places', placeData);
+      navigate('/account/places');
+    }
   };
 
   return (
     <div>
-      <form onSubmit={handleSubmit}>
+      <AccountNav />
+      <form onSubmit={savePlace}>
         <h2 className="text-2xl mt-4">Title</h2>
         <input
           type="text"
