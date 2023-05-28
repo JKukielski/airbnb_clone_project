@@ -1,8 +1,9 @@
-import { ViewColumnsIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, ViewColumnsIcon } from '@heroicons/react/24/outline';
 import { XMarkIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import BookingWidget from '../BookingWidget';
 
 export default function Place() {
   const { id } = useParams();
@@ -20,10 +21,14 @@ export default function Place() {
 
   if (displayImg) {
     return (
-      <div className="absolute inset-0 bg-white min-h-screen">
-        <div className="p-8 grid gap-4">
+      <div className="absolute inset-0 bg-black text-white min-h-screen">
+        <div className="bg-black p-8 grid gap-4">
           <div>
-            <button className="flex gap-1 py-2 px-4 rounded-2xl">
+            <h2 className="text-3xl mr-48">Photos of {place?.title}</h2>
+            <button
+              onClick={() => setDisplayImg(false)}
+              className="fixed right-12 top-8 flex gap-1 py-2 px-4 rounded-2xl shadow shadow-black bg-white text-black"
+            >
               <XMarkIcon className="w-6 h-6" />
               Close photos
             </button>
@@ -39,23 +44,25 @@ export default function Place() {
     );
   }
   return (
-    <div className="mt-4 bg-gray-100 -mx-8 px-8 py-8">
+    <div className="mt-4 bg-gray-100 -mx-8 px-8 pt-8">
       <h1 className="text-3xl">{place?.title}</h1>
       <a
-        className="block underline my-2"
+        className="flex gap-1 underline my-3"
         target="_blank"
         rel="noreferrer"
         href={`https://maps.google.com/?q=${place?.address}`}
       >
+        <MapPinIcon className="w-5 h-5" />
         {place?.address}
       </a>
       <div className="relative">
-        <div className="grid gap-2 grid-cols-[2fr_1fr]">
+        <div className="grid gap-2 grid-cols-[2fr_1fr] rounded-2xl overflow-hidden">
           <div>
             {place?.photos?.[0] && (
               <div>
                 <img
-                  className="aspect-sqaure object-cover"
+                  onClick={() => setDisplayImg(true)}
+                  className="aspect-sqaure object-cover cursor-pointer"
                   src={`http://localhost:4000/uploads/${place.photos?.[0]}`}
                   alt=""
                 />
@@ -65,7 +72,8 @@ export default function Place() {
           <div className="grid">
             {place?.photos?.[1] && (
               <img
-                className="aspect-sqaure object-cover"
+                onClick={() => setDisplayImg(true)}
+                className="aspect-sqaure object-cover cursor-pointer"
                 src={`http://localhost:4000/uploads/${place.photos?.[1]}`}
                 alt=""
               />
@@ -73,7 +81,8 @@ export default function Place() {
             <div className="overflow-hidden">
               {place?.photos?.[2] && (
                 <img
-                  className="aspect-sqaure object-cover relative top-2"
+                  onClick={() => setDisplayImg(true)}
+                  className="aspect-sqaure object-cover relative top-2 cursor-pointer"
                   src={`http://localhost:4000/uploads/${place.photos?.[2]}`}
                   alt=""
                 />
@@ -88,6 +97,29 @@ export default function Place() {
           <ViewColumnsIcon className="w-6 h-6" />
           Show all photos...
         </button>
+      </div>
+
+      <div className="my-8 grid gap-8 grid-cols-1 md:grid-cols-[2fr_1fr]">
+        <div>
+          <div className="my-4">
+            <h2 className="text-2xl">Description</h2>
+            {place?.description}
+          </div>
+          Check-in: {place?.checkIn} <br />
+          Check-out: {place?.checkOut} <br />
+          Max number of guests: {place?.maxGuests}
+        </div>
+        <div>
+          <BookingWidget place={place} />
+        </div>
+      </div>
+      <div className="bg-white -mx-8 p-8 border-t">
+        <div>
+          <h2 className="text-2xl">Additional information</h2>
+        </div>
+        <div className="text-sm text-gray-700 leading-5 mb-4 mt-2">
+          {place?.extraInfo}
+        </div>
       </div>
     </div>
   );
