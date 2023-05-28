@@ -1,5 +1,10 @@
 /* eslint-disable react/prop-types */
-import { CloudArrowUpIcon, TrashIcon } from '@heroicons/react/24/outline';
+import {
+  CloudArrowUpIcon,
+  TrashIcon,
+  StarIcon as StarIconOutline,
+} from '@heroicons/react/24/outline';
+import { StarIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
 import { useState } from 'react';
 
@@ -34,8 +39,20 @@ export default function PhotosUpload({ addedPhotos, setAddedPhotos }) {
       });
   }
 
-  const removePhoto = (filename) => {
+  const removePhoto = (e, filename) => {
+    e.preventDefault();
+
     setAddedPhotos([...addedPhotos.filter((photo) => photo !== filename)]);
+  };
+
+  const selectAsMain = (e, filename) => {
+    e.preventDefault();
+
+    const newAddedPhotos = [
+      filename,
+      ...addedPhotos.filter((photo) => photo !== filename),
+    ];
+    setAddedPhotos(newAddedPhotos);
   };
 
   return (
@@ -64,16 +81,20 @@ export default function PhotosUpload({ addedPhotos, setAddedPhotos }) {
                 src={`http://localhost:4000/uploads/${link}`}
               />
               <button
-                onClick={() => removePhoto(link)}
+                onClick={(e) => removePhoto(e, link)}
                 className="cursor-pointer absolute bottom-1 right-1 text-white bg-black bg-opacity-50 py-2 px-3 rounded-xl"
               >
                 <TrashIcon className="w-6 h-6" />
               </button>
               <button
-                onClick={() => selectAsMain(link)}
-                className="cursor-pointer absolute bottom-1 right-1 text-white bg-black bg-opacity-50 py-2 px-3 rounded-xl"
+                onClick={(e) => selectAsMain(e, link)}
+                className="cursor-pointer absolute bottom-1 left-1 text-white bg-black bg-opacity-50 py-2 px-3 rounded-xl"
               >
-                <TrashIcon className="w-6 h-6" />
+                {link === addedPhotos[0] ? (
+                  <StarIcon className="w-6 h-6" />
+                ) : (
+                  <StarIconOutline className="w-6 h-6" />
+                )}
               </button>
             </div>
           ))}
