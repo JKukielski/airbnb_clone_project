@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import User from './models/User.js';
 import Place from './models/Place.js';
+import Booking from './models/Booking.js';
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
@@ -44,7 +45,7 @@ const upload = multer({ storage });
 app.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
   try {
-    const salt = await bcrypt.salt();
+    const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
     const user = new User({
       name,
@@ -55,6 +56,7 @@ app.post('/register', async (req, res) => {
     const savedUser = await user.save();
     res.json(savedUser);
   } catch (error) {
+    console.log(error);
     res.status(422).json(error);
   }
 });
@@ -218,6 +220,46 @@ app.put('/places/:id', async (req, res) => {
 
 app.get('/places', async (req, res) => {
   res.json(await Place.find());
+});
+
+const getUserDataFromToken = (req) => {
+  return new Promise((resolve, reject) => {
+    jwt.verify(
+      req.cookies.token,
+      process.env.JWT_SECRET,
+      {},
+      async (err, userData) => {
+        if (err) throw err;
+        resolve(userData);
+      }
+    );
+  });
+};
+
+app.post('/bookings', async (req, res) => {
+  const { place, checkIn, checkOut, guests, name, phone, price } = req.body;
+  try {
+    const userData = await getUserDataFromToken(req);
+    const newBooking = new Booking({
+      place,
+      checkIn,
+      checkOut,
+      guests,
+      name,
+      phone,
+      price,
+      user: userData.id,
+    });
+    const savedBooking = await newBooking.save();
+    res.json(savedBooking);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+app.get('/bookings', async (req, res) => {
+  const userData = await getUserDataFromToken(req);
+  res.json(await Booking.find({ user: userData.id }).populate('place'));
 });
 
 app.listen(4000, () => {
